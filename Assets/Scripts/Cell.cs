@@ -7,8 +7,8 @@ using UnityEngine.UI;
 
 public class Cell : MonoBehaviour
 {
-    [SerializeField] private int    row;
-    [SerializeField] private int    col;
+     public int Row { get; set; }
+     public int Col { get; set; }
     
 
     [SerializeField] private Image  image;
@@ -25,15 +25,14 @@ public class Cell : MonoBehaviour
     public void OnInit(CaroGameManager caroGameManager, int row, int col)
     {
         this.caroGameManager = caroGameManager;
-        this.row = row;
-        this.col = col;
+        Row = row;
+        Col = col;
     }
 
     /// <summary>
     /// Change image to x or o when click
     /// </summary>
-    /// <param name="s">string s must be "x" or "o"</param>
-    private void ChangeImage(Sprite sprite)
+    public void ChangeImage(Sprite sprite)
     {
         image.sprite = sprite;
     }
@@ -44,11 +43,7 @@ public class Cell : MonoBehaviour
         {
             return;
         }
-
-      
-        
-        var sprite = caroGameManager.Check(row,col);
-        ChangeImage(sprite);
+        caroGameManager.Check(this);
         isChecked = true;
     }
 }

@@ -8,102 +8,115 @@ namespace CaroGame
 {
     public class CaroGameManager : MonoBehaviour
     {
-        [Header("Config Game")] 
-        [SerializeField] private CaroConfig config;
+        [Header("Config Game")] [SerializeField]
+        private CaroConfig config;
 
         [Space(1f)] [Header("Generate Board")] 
-        [SerializeField] private GameObject      cellPrefabs;
-        [SerializeField] private Transform       boardTransform;
+        [SerializeField] private GameObject cellPrefabs;
+
+        [SerializeField] private Transform boardTransform;
         [SerializeField] private GridLayoutGroup gridLayoutGroup;
-                         private int             boardSize;
+        public int BoardSize { get; set; }
 
-         [Space(1f)] [Header("Game Handler")] 
-         [SerializeField] private string      currentTurn = "x";
-         
-         public string CurrentTurn
-         {
-             get { return CurrentTurn;}
-         }
+        [Space(1f)] [Header("Game Handler")] 
+        [SerializeField] private string currentTurn = "x";
+        
+        [SerializeField] private string[,] board;
+        [SerializeField] private List<Cell> cellList;
 
-         [SerializeField] private string[,] board;
+        public string[,] Board
+        {
+            get => board;
+            set => board = value;
+        }
 
-         // Start is called before the first frame update
+        // Start is called before the first frame update
         void Start()
         {
             OnInit();
         }
 
-        // Update is called once per frame
-        void Update()
-        {
-        }
-
         private void OnInit()
         {
-            boardSize = config.boardSize;
-            board = new string[boardSize, boardSize];
+            BoardSize = config.boardSize;
+            board = new string[BoardSize, BoardSize];
             GenerateBoard();
         }
-        
+
         private void GenerateBoard()
         {
-            
-            gridLayoutGroup.constraintCount = boardSize;
-            for (int i = 0; i < boardSize; i++)
+            gridLayoutGroup.constraintCount = BoardSize;
+            for (int i = 0; i < BoardSize; i++)
             {
-                for (int j = 0; j < boardSize; j++)
+                for (int j = 0; j < BoardSize; j++)
                 {
                     var obj = Instantiate(cellPrefabs, boardTransform);
-                    obj.GetComponent<Cell>().OnInit(this, i,j);
+                    var cell = obj.GetComponent<Cell>();
+                    cell.OnInit(this, i, j);
+                    cellList.Add(cell);
                     board[i, j] = "";
                 }
             }
-            
         }
 
-        public Sprite Check(int row, int col)
+        public void Check(Cell cell)
         {
-            if (CheckWin(row, col))
+            board[cell.Row, cell.Col] = currentTurn;
+            cell.ChangeImage(currentTurn == "x" ? config.xSprite : config.oSprite);
+            if (CheckWin(cell.Row, cell.Col))
             {
                 Debug.Log("EndGame");
             }
-            board[row, col] = currentTurn;
-            
+
             currentTurn = currentTurn == "x" ? "o" : "x";
-            return currentTurn != "x" ? config.xSprite : config.oSprite;
         }
+        public void Check(int row, int col)
+        {
+            Check(GetCellByPos(row, col));
+        }
+        private Cell GetCellByPos(int row, int col)
+        {
+            foreach (var cell in cellList)
+            {
+                if (cell.Row == row && cell.Col == col)
+                {
+                    return cell;
+                }
+            }
+
+            return null;
+        }
+        
+        #region  Win Check
+
         private bool CheckWin(int row, int col)
         {
-             
-            if (CheckRow(row,col))
+            if (CheckRow(row, col))
             {
-                Debug.Log("Win Row");
                 return true;
             }
 
-            if (CheckCol(row,col))
+            if (CheckCol(row, col))
             {
-                Debug.Log("Win Col");
                 return true;
             }
-            if (CheckDiagonalRight(row,col))
+
+            if (CheckDiagonalRight(row, col))
             {
-                Debug.Log("Win Diagonal right");
                 return true;
             }
-            
-            if (CheckDiagonalLeft(row,col))
+
+            if (CheckDiagonalLeft(row, col))
             {
-                Debug.Log("Win Diagonal left");
                 return true;
             }
-           
 
             return false;
         }
+
         private bool CheckRow(int row, int col)
         {
-            int  count = 1;
+            int count = 1;
             for (int i = col - 1; i > -1; i--)
             {
                 if (board[row, i] == currentTurn)
@@ -115,7 +128,8 @@ namespace CaroGame
                     break;
                 }
             }
-            for (int i = col + 1; i < boardSize; i++)
+
+            for (int i = col + 1; i < BoardSize; i++)
             {
                 if (board[row, i] == currentTurn)
                 {
@@ -126,9 +140,10 @@ namespace CaroGame
                     break;
                 }
             }
-            
+
             return count >= 5;
         }
+
         private bool CheckCol(int row, int col)
         {
             int count = 1;
@@ -143,7 +158,8 @@ namespace CaroGame
                     break;
                 }
             }
-            for (int i = row + 1; i < boardSize; i++)
+
+            for (int i = row + 1; i < BoardSize; i++)
             {
                 if (board[i, col] == currentTurn)
                 {
@@ -154,16 +170,20 @@ namespace CaroGame
                     break;
                 }
             }
-            
+
             return count >= 5;
         }
 
-        private bool CheckDiagonalRight(int row, int col) 
+        private bool CheckDiagonalRight(int row, int col)
         {
             int count = 1;
             for (int i = row - 1; i > -1; i--) // len 1 dong
             {
                 int colPos = col - (row - i); // len may dong thi sang trai bay nhieu
+                if (colPos < 0)
+                {
+                    break;
+                }
                 if (board[i, colPos] == currentTurn) // check
                 {
                     count++;
@@ -172,33 +192,39 @@ namespace CaroGame
                 {
                     break;
                 }
-            
-            }
-            
-            for (int i = row + 1; i < boardSize; i++) // xuong 1 dong
-            {
-                int colPos = col + (i - row); // xuong may dong thi sang phai bay nhieu
-                if (board[i, colPos] == currentTurn) // check
-                {
-                    count++;
-                }
-                else
-                {
-                    break;
-                }
-            
             }
 
-            
+            for (int i = row + 1; i < BoardSize; i++) // xuong 1 dong
+            {
+                int colPos = col + (i - row); // xuong may dong thi sang phai bay nhieu
+                if (colPos >= BoardSize)
+                {
+                    break;
+                }
+                if (board[i, colPos] == currentTurn) // check
+                {
+                    count++;
+                }
+                else
+                {
+                    break;
+                }
+            }
+
+
             return count >= 5;
         }
-        
-        private bool CheckDiagonalLeft(int row, int col) 
+
+        private bool CheckDiagonalLeft(int row, int col)
         {
             int count = 1;
             for (int i = row - 1; i > -1; i--) // len 1 dong
             {
-                int colPos = col + (row - i);  // len may dong thi sang phai bay nhieu
+                int colPos = col + (row - i); // len may dong thi sang phai bay nhieu
+                if (colPos >= BoardSize)
+                {
+                    break;
+                }
                 if (board[i, colPos] == currentTurn) // check
                 {
                     count++;
@@ -207,25 +233,28 @@ namespace CaroGame
                 {
                     break;
                 }
-            
-            }
-            
-            for (int i = row + 1; i < boardSize; i++) // xuong 1 dong
-            {
-                int colPos = col - (i - row); // xuong may dong thi sang trai bay nhieu
-                if (board[i, colPos] == currentTurn) // check
-                {
-                    count++;
-                }
-                else
-                {
-                    break;
-                }
-            
             }
 
-            
+            for (int i = row + 1; i < BoardSize; i++) // xuong 1 dong
+            {
+                int colPos = col - (i - row); // xuong may dong thi sang trai bay nhieu
+                if (colPos < 0)
+                {
+                    break;
+                }
+                if (board[i, colPos] == currentTurn) // check
+                {
+                    count++;
+                }
+                else
+                {
+                    break;
+                }
+            }
+
             return count >= 5;
         }
+
+        #endregion
     }
 }
