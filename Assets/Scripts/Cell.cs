@@ -10,8 +10,6 @@ public class Cell : MonoBehaviour
     [SerializeField] private int    row;
     [SerializeField] private int    col;
     
-    [SerializeField] private Sprite xSprite;
-    [SerializeField] private Sprite oSprite;
 
     [SerializeField] private Image  image;
     [SerializeField] private Button button;
@@ -35,9 +33,9 @@ public class Cell : MonoBehaviour
     /// Change image to x or o when click
     /// </summary>
     /// <param name="s">string s must be "x" or "o"</param>
-    private void ChangeImage(string s)
+    private void ChangeImage(Sprite sprite)
     {
-        image.sprite = s == "x" ? xSprite : oSprite;
+        image.sprite = sprite;
     }
 
     private void OnClick()
@@ -46,8 +44,11 @@ public class Cell : MonoBehaviour
         {
             return;
         }
+
+      
         
-        ChangeImage(caroGameManager.CurrentTurn);
+        var sprite = caroGameManager.Check(row,col);
+        ChangeImage(sprite);
         isChecked = true;
     }
 }
